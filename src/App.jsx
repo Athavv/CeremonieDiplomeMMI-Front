@@ -7,6 +7,7 @@ import ChangePassword from './pages/ChangePassword';
 import Planning from './pages/Planning';
 import Gallery from './pages/Gallery';
 import Guestbook from './pages/Guestbook';
+import NotFound from './pages/NotFound';
 
 // Admin Imports
 import AdminLayout from './components/admin/AdminLayout';
@@ -80,6 +81,8 @@ function App() {
             <Route path="gallery" element={<GalleryAdminPage />} />
           </Route>
 
+          {/* 404 - Must be last */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
       </AuthProvider>
