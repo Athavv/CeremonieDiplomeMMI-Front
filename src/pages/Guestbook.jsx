@@ -25,7 +25,7 @@ const Guestbook = () => {
     }, []);
     const loadMessages = async () => {
         try {
-            const data = await guestbookService.getApprovedMessages();
+            const data = await guestbookService.getAllMessages();
             setMessages(data);
         } catch (err) {
             console.error(err);
@@ -77,7 +77,8 @@ const Guestbook = () => {
                 image: capturedImage
             };
             await guestbookService.postMessage(messageToSend);
-            alert("Message envoyé ! Il sera visible après validation.");
+            alert("Message envoyé !");
+            loadMessages();
             setNewMessage({ firstName: '', lastName: '', content: '' });
             setCapturedImage(null);
         } catch (err) {
