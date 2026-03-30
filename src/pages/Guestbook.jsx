@@ -3,6 +3,7 @@ import { guestbookService } from '../api/guestbook.service';
 import { getImageUrl } from '../api/api';
 import { Camera, RefreshCw, Trash2, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DynamicWaveButton from '../components/common/DynamicWaveButton';
 
 const Guestbook = () => {
     const [messages, setMessages] = useState([]);
@@ -14,15 +15,39 @@ const Guestbook = () => {
     const canvasRef = useRef(null);
     const [page, setPage] = useState(1);
     const messagesPerPage = 6;
-    const fadeUp = {
-        initial: { opacity: 0, y: 20 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, margin: "-50px" },
-        transition: { duration: 0.6 }
+
+    // --- Animations "WOW" Super-Stables (Issues de Planning) ---
+    const wowParent = {
+        hidden: { opacity: 1 },
+        visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.1 } }
     };
+
+    const wowTop = {
+        hidden: { opacity: 0, y: -50, scale: 0.95 },
+        visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
+    };
+
+    const wowLeftItems = {
+        hidden: { opacity: 0, x: -100, scale: 0.9 },
+        visible: { opacity: 1, x: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 10 } }
+    };
+
+    const wowRightItems = {
+        // Apparition 3D avec tilt depuis la droite
+        hidden: { opacity: 0, x: 100, rotateY: 30, scale: 0.9 },
+        visible: { opacity: 1, x: 0, rotateY: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } }
+    };
+
+    const wowCardCascade = (index) => ({
+        hidden: { opacity: 0, y: 50 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: (index % 6) * 0.15, type: "spring", stiffness: 80 } }
+    });
+
+
     useEffect(() => {
         loadMessages();
     }, []);
+
     const loadMessages = async () => {
         try {
             const data = await guestbookService.getAllMessages();
@@ -33,6 +58,7 @@ const Guestbook = () => {
             setLoading(false);
         }
     };
+
     const handleCamera = async () => {
         setShowCamera(true);
         try {
@@ -46,6 +72,7 @@ const Guestbook = () => {
             setShowCamera(false);
         }
     };
+
     const takePhoto = () => {
         if (videoRef.current && canvasRef.current) {
             const context = canvasRef.current.getContext('2d');
@@ -58,12 +85,14 @@ const Guestbook = () => {
             stopCamera();
         }
     };
+
     const stopCamera = () => {
         if (videoRef.current && videoRef.current.srcObject) {
             videoRef.current.srcObject.getTracks().forEach(track => track.stop());
         }
         setShowCamera(false);
     };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!newMessage.firstName || !newMessage.lastName || !newMessage.content) {
@@ -86,29 +115,47 @@ const Guestbook = () => {
             alert("Erreur lors de l'envoi.");
         }
     };
+
     const displayedMessages = messages.slice(0, page * messagesPerPage);
+
     return (
-        <div className="min-h-screen pt-20 bg-[#071341] overflow-x-hidden">
-            <motion.div {...fadeUp} className="max-w-7xl mx-auto px-16 py-12 text-center md:text-left">
-                <h1 className="text-3xl md:text-5xl font-serif text-[#ffffff] uppercase tracking-wide border-b-4 border-[#ffffff] inline-block pb-2 mb-8">
-                    Le Livre d'Or
-                </h1>
-            </motion.div>
-            <div className="bg-[#071341] text-white pb-16 md:px-32 px-5 relative">
+        <div className="min-h-screen pt-20 bg-[#071341] overflow-x-hidden" style={{ perspective: "1500px" }}>
+            
+            {/* -------------------- ORCHESTRATION HAUT DE PAGE -------------------- */}
+            <motion.div 
+                className="bg-[#071341] text-white pb-16 md:px-32 px-5 relative"
+                variants={wowParent}
+                initial="hidden"
+                animate="visible"
+            >
+                {/* Zone Titre Unique (remplace le wrappeur séparé du header) */}
+                <motion.div variants={wowTop} className="max-w-7xl mx-auto px-4 md:px-16 pt-12 pb-8 text-center md:text-left z-20 relative">
+                    <h1 className="text-3xl md:text-5xl font-serif text-[#ffffff] uppercase tracking-wide border-b-4 border-[#ffffff] inline-block pb-2">
+                        Le Livre d'Or
+                    </h1>
+                </motion.div>
+
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
                     <div className="absolute -top-20 -right-20 w-96 h-96"></div>
                     <div className="absolute top-40 -left-20 w-72 h-72"></div>
                 </div>     
+                
                 <div className="relative z-10 max-w-7xl mx-auto">
-                    <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.2 }} className="text-center mb-16 space-y-2">
+                    
+                    <motion.div variants={wowTop} className="text-center mb-16 space-y-2">
                         <h2 className="font-serif italic text-4xl mb-2">Laissez une trace.</h2>
                         <p className="uppercase tracking-[0.2em] text-sm text-[#B8AB38]">CÉRÉMONIE DE REMISE DES DIPLÔMES</p>
                     </motion.div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
-                        <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.6 }} className="bg-white p-8 md:p-10 shadow-2xl relative text-gray-800">
+                        
+                        {/* ---------- COL 1 : FORMULAIRE (ENTREE GAUCHE) ---------- */}
+                        <motion.div variants={wowLeftItems} className="bg-white p-8 md:p-10 shadow-2xl relative text-gray-800">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#B8AB38] via-transparent to-[#B8AB38]"></div>
-                            <h3 className="text-[#B8AB38] text-center font-serif text-xl uppercase tracking-widest mb-10 border-b border-gray-100 pb-4">Le Livre d'Or Numérique
+                            <h3 className="text-[#B8AB38] text-center font-serif text-xl uppercase tracking-widest mb-10 border-b border-gray-100 pb-4">
+                                Le Livre d'Or Numérique
                             </h3>
+                            
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid grid-cols gap-6">
                                     <div className="space-y-1">
@@ -118,9 +165,11 @@ const Guestbook = () => {
                                         <input type="text" value={newMessage.firstName} onChange={(e) => setNewMessage({ ...newMessage, firstName: e.target.value })} className="w-full border-b py-2 text-[#071341] placeholder:text-gray-300 placeholder:font-serif placeholder:italic focus:border-[#071341] focus:outline-none transition-colors bg-transparent font-poppins" placeholder="Votre prénom"/>
                                     </div>
                                 </div>
+                                
                                 <div className="space-y-1">
                                     <textarea value={newMessage.content} onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })} className="w-full border-b py-2 text-[#071341] placeholder:text-gray-300 placeholder:font-serif placeholder:italic focus:border-[#071341] focus:outline-none transition-colors bg-transparent resize-none h-24 font-poppins font-normal" placeholder="Écrivez votre message ici..."/>
                                 </div>
+                                
                                 <div className="pt-2">
                                     {!showCamera && !capturedImage && (
                                         <button type="button" onClick={handleCamera} className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#071341] transition-colors">
@@ -150,10 +199,27 @@ const Guestbook = () => {
                                     )}
                                     <canvas ref={canvasRef} className="hidden"></canvas>
                                 </div>
-                                <button type="submit" className="w-full bg-[#071341] text-white py-4 uppercase tracking-[0.2em] hover:bg-[#B8AB38] hover:text-[#071341] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-sm mt-8 border border-[#071341]">Envoyer le message</button>
+                                
+                                {/* REPLACEMENT PAR LE BOUTON LIQUIDE DYNAMICWAVE */}
+                                <div className="mt-8 font-poppins">
+                                    <button type="submit" className="w-full p-0 border-none bg-transparent">
+                                        <DynamicWaveButton 
+                                            className="w-full py-4 bg-[#071341] text-white font-medium uppercase tracking-[0.2em] text-sm hover:!bg-[#B8AB38] hover:!text-[#071341] transition-colors"
+                                            baseBg="bg-[#071341]"
+                                            hoverBg="bg-[#B8AB38]"
+                                            baseText="text-white"
+                                            hoverText="text-[#071341]"
+                                        >
+                                            Envoyer le message
+                                        </DynamicWaveButton>
+                                    </button>
+                                </div>
+                                
                             </form>
                         </motion.div>
-                        <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-white p-8 md:p-10 shadow-2xl flex flex-col justify-between border-t-4 border-[#B8AB38] text-gray-800">
+
+                        {/* ---------- COL 2 : A PROPOS (ENTREE DROITE 3D) ---------- */}
+                        <motion.div variants={wowRightItems} className="bg-white p-8 md:p-10 shadow-2xl flex flex-col justify-between border-t-4 border-[#B8AB38] text-gray-800">
                             <div>
                                 <h3 className="text-[#B8AB38] text-center font-serif text-xl uppercase tracking-widest mb-10 border-b border-gray-100 pb-4">À Propos</h3>
                                 <div className="text-gray-600 text-justify leading-relaxed space-y-4 font-light">
@@ -168,31 +234,40 @@ const Guestbook = () => {
                         </motion.div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
+
+            {/* -------------------- ORCHESTRATION GRILLE DES MESSAGES -------------------- */}
             <div className="py-20 px-6 bg-[#F9F9F9]">
                 <div className="max-w-7xl mx-auto">
                     {messages.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {displayedMessages.map((msg, index) => (
-                                <motion.div key={msg.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, delay: (index % 6) * 0.1 }}className="group bg-[#071341] p-8 min-h-[280px] flex flex-col justify-between relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl">                                
-                                    <div className="absolute inset-0 border border-[#B8AB38]/30 m-2 pointer-events-none group-hover:border-[#B8AB38] transition-colors duration-500"></div>
+                                <motion.div 
+                                    key={msg.id} 
+                                    variants={wowCardCascade(index)} 
+                                    initial="hidden"
+                                    whileInView="visible"
+                                    viewport={{ once: true, margin: "100px" }}
+                                    className="group bg-[#071341] p-8 min-h-[280px] flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_20px_40px_rgba(7,19,65,0.4)]"
+                                >                                
+                                    <div className="absolute inset-0 border border-[#B8AB38]/10 m-2 group-hover:m-0 pointer-events-none group-hover:border-[#B8AB38]/50 transition-all duration-500"></div>
                                     <div className="relative z-10 w-full">
                                         <div className="flex justify-between items-start mb-6 w-full">
-                                            <div className="opacity-30">
+                                            <div className="opacity-30 group-hover:opacity-100 transition-opacity duration-500 group-hover:rotate-12 transform">
                                                 <ImageIcon className="h-8 w-8 text-[#B8AB38]" />
                                             </div>
                                             {msg.image && (
-                                                <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38] shadow-lg">
-                                                    <img src={getImageUrl(msg.image)} alt="Souvenir" className="w-full h-full object-cover transform transition-transform group-hover:scale-110"/>
+                                                <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg">
+                                                    <img src={getImageUrl(msg.image)} alt="Souvenir" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"/>
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-gray-300 font-light leading-relaxed italic text-lg line-clamp-4 overflow-hidden">
+                                        <p className="text-gray-300 font-light leading-relaxed italic text-lg line-clamp-4 overflow-hidden group-hover:text-white transition-colors duration-300">
                                             "{msg.content}"
                                         </p>
                                     </div>
-                                    <div className="relative z-10 flex items-end justify-between mt-6 pt-6 border-t border-white/10">
-                                        <span className="text-[#B8AB38] font-serif uppercase tracking-widest text-sm">
+                                    <div className="relative z-10 flex items-end justify-between mt-6 pt-6 border-t border-white/10 group-hover:border-[#B8AB38]/30 transition-colors duration-300">
+                                        <span className="text-[#B8AB38] font-serif uppercase tracking-widest text-sm group-hover:scale-105 origin-left transition-transform duration-300">
                                             — {msg.author}
                                         </span>
                                     </div>
@@ -204,12 +279,28 @@ const Guestbook = () => {
                             <p className="text-gray-500 text-md font-light">Soyez le premier à laisser un message !</p>
                         </div>
                     )}
+
                     {messages.length > displayedMessages.length && (
-                        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.5 }}className="text-center mt-16">
-                            <button onClick={() => setPage(prev => prev + 1)} className="inline-flex items-center gap-2 bg-transparent text-[#071341] border border-[#071341] px-8 py-3 uppercase tracking-widest hover:bg-[#071341] hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                <RefreshCw className="h-4 w-4" />
-                                Charger plus de messages
-                            </button>
+                        <motion.div 
+                            initial={{ opacity: 0, y: 30 }} 
+                            whileInView={{ opacity: 1, y: 0 }} 
+                            viewport={{ once: true }}
+                            className="text-center mt-16 flex justify-center"
+                        >
+                            <div onClick={() => setPage(prev => prev + 1)}>
+                                <DynamicWaveButton 
+                                    className="px-8 py-3 bg-transparent text-[#071341] border border-[#071341] uppercase tracking-widest hover:bg-[#071341] hover:text-white"
+                                    baseBg="bg-transparent"
+                                    hoverBg="bg-[#071341]"
+                                    baseText="text-[#071341]"
+                                    hoverText="text-white"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <RefreshCw className="h-4 w-4" />
+                                        Charger plus de messages
+                                    </div>
+                                </DynamicWaveButton>
+                            </div>
                         </motion.div>
                     )}
                 </div>
@@ -217,4 +308,5 @@ const Guestbook = () => {
         </div>
     );
 };
+
 export default Guestbook;
