@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { guestbookService } from '../api/guestbook.service';
 import { getImageUrl } from '../api/api';
-import { Camera, RefreshCw, Trash2, Image as ImageIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Camera, RefreshCw, Trash2, Image as ImageIcon, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import DynamicWaveButton from '../components/common/DynamicWaveButton';
 
 const Guestbook = () => {
@@ -14,12 +14,13 @@ const Guestbook = () => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [page, setPage] = useState(1);
+    const [selectedMessage, setSelectedMessage] = useState(null); // Pour la Modale Lightbox
     const messagesPerPage = 6;
 
     // --- Animations "WOW" Super-Stables (Issues de Planning) ---
     const wowParent = {
         hidden: { opacity: 1 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.1 } }
+        visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.8 } } // DELAY DE 0.8s EXACT POUR ATTENDRE LES CARRES BLEUS !
     };
 
     const wowTop = {
@@ -76,11 +77,16 @@ const Guestbook = () => {
     const takePhoto = () => {
         if (videoRef.current && canvasRef.current) {
             const context = canvasRef.current.getContext('2d');
-            canvasRef.current.width = videoRef.current.videoWidth;
-            canvasRef.current.height = videoRef.current.videoHeight;
+            
+            // COMPRESSION DRASTIQUE POUR EVITER L'ERREUR 500 DU SERVEUR
+            const MAX_WIDTH = 640; 
+            const scale = MAX_WIDTH / videoRef.current.videoWidth;
+            canvasRef.current.width = MAX_WIDTH;
+            canvasRef.current.height = videoRef.current.videoHeight * scale;
 
             context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-            const dataUrl = canvasRef.current.toDataURL('image/jpeg');
+            // Qualité 0.6 pour diviser par 8 le poids du payload et passer sous les limites Tomcat/Jackson
+            const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.6);
             setCapturedImage(dataUrl);
             stopCamera();
         }
@@ -248,7 +254,8 @@ const Guestbook = () => {
                                     initial="hidden"
                                     whileInView="visible"
                                     viewport={{ once: true, margin: "100px" }}
-                                    className="group bg-[#071341] p-8 min-h-[280px] flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_20px_40px_rgba(7,19,65,0.4)]"
+                                    onClick={() => setSelectedMessage(msg)}
+                                    className="group cursor-pointer bg-[#071341] p-8 min-h-[280px] flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_20px_40px_rgba(7,19,65,0.4)]"
                                 >                                
                                     <div className="absolute inset-0 border border-[#B8AB38]/10 m-2 group-hover:m-0 pointer-events-none group-hover:border-[#B8AB38]/50 transition-all duration-500"></div>
                                     <div className="relative z-10 w-full">
@@ -258,7 +265,8 @@ const Guestbook = () => {
                                             </div>
                                             {msg.image && (
                                                 <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg">
-                                                    <img src={getImageUrl(msg.image)} alt="Souvenir" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"/>
+                                                    {/* FIX GLITCH: Direct Data URL au lieu du wrapper API */}
+                                                    <img src={msg.image} alt="Souvenir" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"/>
                                                 </div>
                                             )}
                                         </div>
@@ -305,6 +313,63 @@ const Guestbook = () => {
                     )}
                 </div>
             </div>
+
+            {/* ---------- MODALE D'AFFICHAGE EN GROS ---------- */}
+            <AnimatePresence>
+                {selectedMessage && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        {/* Overlay flou cliquable */}
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedMessage(null)}
+                            className="absolute inset-0 bg-[#071341]/90 backdrop-blur-md cursor-zoom-out"
+                        />
+                        {/* Contenu modale */}
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative z-10 w-full max-w-5xl bg-white rounded-xl overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.5)] flex flex-col md:flex-row max-h-[90vh]"
+                        >
+                            <button 
+                                onClick={() => setSelectedMessage(null)}
+                                className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-black text-white p-2 rounded-full transition-colors cursor-pointer"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                            
+                            {/* Image section full render */}
+                            {selectedMessage.image && (
+                                <div className="md:w-1/2 bg-black h-64 md:h-auto relative flex items-center justify-center overflow-hidden">
+                                    <img 
+                                        src={selectedMessage.image} 
+                                        alt="Souvenir" 
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            )}
+                            
+                            {/* Text section full render */}
+                            <div className={`p-8 md:p-14 flex flex-col justify-center ${selectedMessage.image ? 'md:w-1/2' : 'w-full'} bg-[#071341] text-white overflow-y-auto`}>
+                                <div className="mb-6 opacity-30">
+                                    <ImageIcon className="h-12 w-12 text-[#B8AB38]" />
+                                </div>
+                                <p className="font-light leading-relaxed italic text-xl md:text-3xl mb-8">
+                                    "{selectedMessage.content}"
+                                </p>
+                                <div className="pt-6 border-t border-[#B8AB38]/50 mt-auto">
+                                    <span className="text-[#B8AB38] font-serif uppercase tracking-widest text-lg md:text-xl">
+                                        — {selectedMessage.author}
+                                    </span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
         </div>
     );
 };

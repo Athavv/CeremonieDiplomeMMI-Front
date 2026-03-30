@@ -19,7 +19,17 @@ const PageTransition = ({ children }) => {
   const rows = 15;
   const totalBlocks = cols * rows;
 
+  // VERIFICATION: Ne pas faire de transition sur les routes d'administration
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   useEffect(() => {
+    // Si route admin, on ne fait aucune animation de curtain
+    if (isAdminRoute) {
+      setDisplayLocation(location);
+      setCurrentPath(location.pathname);
+      return;
+    }
+
     if (location.pathname !== currentPath) {
       if (isAnimating.current) {
         // If a redirect (e.g., from ProtectedRoute) fires DURING a transition,
@@ -95,6 +105,15 @@ const PageTransition = ({ children }) => {
     }
     return children;
   };
+
+  // Si page admin, on retourne directement les enfants sans la grille complexe !
+  if (isAdminRoute) {
+    return (
+      <div className="w-full min-h-screen">
+        {renderChildren()}
+      </div>
+    );
+  }
 
   return (
     <>
