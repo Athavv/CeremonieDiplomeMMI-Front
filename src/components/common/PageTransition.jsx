@@ -25,6 +25,9 @@ const PageTransition = ({ children }) => {
   useEffect(() => {
     // Si route admin, on ne fait aucune animation de curtain
     if (isAdminRoute) {
+      if (transitionRef.current) {
+        gsap.set(transitionRef.current, { pointerEvents: 'none' });
+      }
       setDisplayLocation(location);
       setCurrentPath(location.pathname);
       return;
@@ -106,14 +109,8 @@ const PageTransition = ({ children }) => {
     return children;
   };
 
-  // Si page admin, on retourne directement les enfants natifs sans interférer avec React Router!
-  if (isAdminRoute) {
-    return (
-      <div className="w-full min-h-screen relative z-10">
-        {children}
-      </div>
-    );
-  }
+  // On render toujours les enfants via renderChildren() pour éviter de casser le DOM
+  // (Sinon ça détruit l'arbre React et empêche de cliquer sur Admin)
 
   return (
     <>
