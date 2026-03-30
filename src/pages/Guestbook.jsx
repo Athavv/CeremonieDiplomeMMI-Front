@@ -79,14 +79,14 @@ const Guestbook = () => {
             const context = canvasRef.current.getContext('2d');
             
             // COMPRESSION DRASTIQUE POUR EVITER L'ERREUR 500 DU SERVEUR
-            const MAX_WIDTH = 640; 
+            const MAX_WIDTH = 320; 
             const scale = MAX_WIDTH / videoRef.current.videoWidth;
             canvasRef.current.width = MAX_WIDTH;
             canvasRef.current.height = videoRef.current.videoHeight * scale;
 
             context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-            // Qualité 0.6 pour diviser par 8 le poids du payload et passer sous les limites Tomcat/Jackson
-            const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.6);
+            // Qualité 0.4 pour diviser drastiquement le poids du payload et passer sous les limites stricts
+            const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.4);
             setCapturedImage(dataUrl);
             stopCamera();
         }
@@ -99,18 +99,6 @@ const Guestbook = () => {
         setShowCamera(false);
     };
 
-    // Conversion base64 to Blob pour l'upload propre et éviter les erreurs 500
-    const dataURItoBlob = (dataURI) => {
-        const byteString = atob(dataURI.split(',')[1]);
-        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-        return new Blob([ab], { type: mimeString });
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!newMessage.firstName || !newMessage.lastName || !newMessage.content) {
@@ -119,25 +107,10 @@ const Guestbook = () => {
         }
         
         try {
-            let finalImageId = null;
-
-            // SI image sélectionnée, on fait l'upload natif d'abord via le contrôleur File
-            if (capturedImage) {
-                const blob = dataURItoBlob(capturedImage);
-                const formData = new FormData();
-                formData.append('file', blob, 'guestbook-photo.jpg');
-
-                const uploadRes = await api.post('/files/upload/gallery', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                // Le backend renvoie le chemin du fichier (ex: gallery/fa2e-...)
-                finalImageId = uploadRes.data; 
-            }
-
             const messageToSend = {
                 author: `${newMessage.firstName} ${newMessage.lastName}`,
                 content: newMessage.content,
-                image: finalImageId
+                image: capturedImage // Retour à l'envoi direct en Base64 compressé pour éviter les pannes de disque sur serveur hébergé
             };
             
             await guestbookService.postMessage(messageToSend);
@@ -293,9 +266,13 @@ const Guestbook = () => {
                                                 <ImageIcon className="h-8 w-8 text-[#B8AB38]" />
                                             </div>
                                             {msg.image && (
-                                                <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg">
-                                                    {/* FIX : Rétablir getImageUrl pour que les anciens messages marchent sans casser les récents */}
-                                                    <img src={getImageUrl(msg.image)} alt="Souvenir" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"/>
+                                                <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg bg-black">
+                                                    <img 
+                                                        src={getImageUrl(msg.image)} 
+                                                        alt="Souvenir" 
+                                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                                        className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"
+                                                    />
                                                 </div>
                                             )}
                                         </div>
@@ -375,6 +352,7 @@ const Guestbook = () => {
                                     <img 
                                         src={getImageUrl(selectedMessage.image)} 
                                         alt="Souvenir" 
+                                        onError={(e) => { e.target.style.display = 'none'; }}
                                         className="w-full h-full object-contain"
                                     />
                                 </div>
