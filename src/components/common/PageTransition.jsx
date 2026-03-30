@@ -106,11 +106,11 @@ const PageTransition = ({ children }) => {
     return children;
   };
 
-  // Si page admin, on retourne directement les enfants sans la grille complexe !
+  // Si page admin, on retourne directement les enfants natifs sans interférer avec React Router!
   if (isAdminRoute) {
     return (
-      <div className="w-full min-h-screen">
-        {renderChildren()}
+      <div className="w-full min-h-screen relative z-10">
+        {children}
       </div>
     );
   }

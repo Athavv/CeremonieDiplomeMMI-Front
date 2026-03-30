@@ -75,18 +75,23 @@ const Home = () => {
                         animate={{ opacity: 1, y: [30, -10, 0] }} 
                         transition={{ duration: 1.5, ease: "easeOut" }}
                         whileHover={{ scale: 1.1, rotate: [0, -2, 2, -2, 0], transition: { duration: 0.5 } }}
-                        src="/logogustaveeiffel.png" className="w-[250px] drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" style={{ maxWidth: "400px", cursor: "pointer" }}
+                        src="/logogustaveeiffel.png" 
+                        className="w-[150px] md:w-[250px] mb-8 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] cursor-pointer" 
                     />
                     
-                    <SplitText delayOffset={0.6} className="text-3xl md:text-4xl mt-5 font-playfair">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 30 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-3xl md:text-4xl mt-5 font-playfair"
+                    >
                         Cérémonie de Remise des Diplômes - MMI
-                    </SplitText>
-                    
+                    </motion.h1>
                     <motion.p
-                        initial={{ opacity: 0, filter: "blur(10px)" }} 
-                        animate={{ opacity: 1, filter: "blur(0px)" }} 
-                        transition={{ duration: 1.5, delay: 1.5 }}
-                        className="text-xl max-w-2xl mt-5 font-poppins"
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        transition={{ duration: 1, delay: 0.6 }}
+                        className="text-xl max-w-2xl mt-5 font-playfair"
                     >
                         PROMOTION 2022 - 2025
                     </motion.p>

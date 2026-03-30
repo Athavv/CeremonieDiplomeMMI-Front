@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { guestbookService } from '../api/guestbook.service';
-import { getImageUrl } from '../api/api';
+import api, { getImageUrl } from '../api/api';
 import { Camera, RefreshCw, Trash2, Image as ImageIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DynamicWaveButton from '../components/common/DynamicWaveButton';
@@ -99,18 +99,47 @@ const Guestbook = () => {
         setShowCamera(false);
     };
 
+    // Conversion base64 to Blob pour l'upload propre et éviter les erreurs 500
+    const dataURItoBlob = (dataURI) => {
+        const byteString = atob(dataURI.split(',')[1]);
+        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!newMessage.firstName || !newMessage.lastName || !newMessage.content) {
             alert("Veuillez remplir tous les champs !");
             return;
         }
+        
         try {
+            let finalImageId = null;
+
+            // SI image sélectionnée, on fait l'upload natif d'abord via le contrôleur File
+            if (capturedImage) {
+                const blob = dataURItoBlob(capturedImage);
+                const formData = new FormData();
+                formData.append('file', blob, 'guestbook-photo.jpg');
+
+                const uploadRes = await api.post('/files/upload/gallery', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                // Le backend renvoie le chemin du fichier (ex: gallery/fa2e-...)
+                finalImageId = uploadRes.data; 
+            }
+
             const messageToSend = {
                 author: `${newMessage.firstName} ${newMessage.lastName}`,
                 content: newMessage.content,
-                image: capturedImage
+                image: finalImageId
             };
+            
             await guestbookService.postMessage(messageToSend);
             alert("Message envoyé !");
             loadMessages();
@@ -265,8 +294,8 @@ const Guestbook = () => {
                                             </div>
                                             {msg.image && (
                                                 <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg">
-                                                    {/* FIX GLITCH: Direct Data URL au lieu du wrapper API */}
-                                                    <img src={msg.image} alt="Souvenir" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"/>
+                                                    {/* FIX : Rétablir getImageUrl pour que les anciens messages marchent sans casser les récents */}
+                                                    <img src={getImageUrl(msg.image)} alt="Souvenir" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"/>
                                                 </div>
                                             )}
                                         </div>
@@ -344,7 +373,7 @@ const Guestbook = () => {
                             {selectedMessage.image && (
                                 <div className="md:w-1/2 bg-black h-64 md:h-auto relative flex items-center justify-center overflow-hidden">
                                     <img 
-                                        src={selectedMessage.image} 
+                                        src={getImageUrl(selectedMessage.image)} 
                                         alt="Souvenir" 
                                         className="w-full h-full object-contain"
                                     />
