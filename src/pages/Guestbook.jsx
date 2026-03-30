@@ -99,6 +99,18 @@ const Guestbook = () => {
         setShowCamera(false);
     };
 
+    // Conversion base64 to Blob pour l'upload propre et éviter les erreurs 500
+    const dataURItoBlob = (dataURI) => {
+        const byteString = atob(dataURI.split(',')[1]);
+        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!newMessage.firstName || !newMessage.lastName || !newMessage.content) {
@@ -107,10 +119,23 @@ const Guestbook = () => {
         }
         
         try {
+            let finalImageId = null;
+
+            if (capturedImage) {
+                const blob = dataURItoBlob(capturedImage);
+                const formData = new FormData();
+                formData.append('file', blob, 'guestbook-photo.jpg');
+
+                const uploadRes = await api.post('/files/upload/gallery', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                finalImageId = uploadRes.data; 
+            }
+
             const messageToSend = {
                 author: `${newMessage.firstName} ${newMessage.lastName}`,
                 content: newMessage.content,
-                image: capturedImage // Retour à l'envoi direct en Base64 compressé pour éviter les pannes de disque sur serveur hébergé
+                image: finalImageId 
             };
             
             await guestbookService.postMessage(messageToSend);
