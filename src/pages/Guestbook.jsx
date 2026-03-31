@@ -84,7 +84,6 @@ const Guestbook = () => {
       const messageToSend = {
         author: `${newMessage.firstName} ${newMessage.lastName}`,
         content: newMessage.content,
-        image: capturedImage,
       };
       await guestbookService.postMessage(messageToSend);
       alert("Message envoyé !");
