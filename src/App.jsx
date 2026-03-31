@@ -49,10 +49,23 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
+const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace('/api', '');
+
+function KeepAlive() {
+  useEffect(() => {
+    const ping = () => fetch(`${BACKEND_URL}/api/public/guestbook`, { method: 'GET' }).catch(() => {});
+    ping();
+    const id = setInterval(ping, 10 * 60 * 1000); // toutes les 10 minutes
+    return () => clearInterval(id);
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <Router>
       <ScrollToTop />
+      <KeepAlive />
       <AuthProvider>
         <SmoothScroll>
           <CustomCursor />
