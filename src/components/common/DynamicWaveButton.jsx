@@ -45,13 +45,14 @@ const DynamicWaveButton = ({
 
       <motion.button
         ref={ref}
+        type="button"
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={onClick}
         whileTap={{ scale: 0.95 }}
         whileHover={{ scale: 1.05 }}
-        className={`relative inline-block transition-transform duration-300 border-none outline-none group ${className}`}
+        className={`relative inline-block transition-transform duration-300 border-none outline-none group cursor-pointer ${className}`}
         style={{
           boxShadow: 'none',
           backgroundColor: 'transparent',

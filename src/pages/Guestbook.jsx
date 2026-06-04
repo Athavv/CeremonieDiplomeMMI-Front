@@ -15,6 +15,7 @@ const Guestbook = () => {
   });
   const [rawBlob, setRawBlob] = useState(null);
   const [templateBlob, setTemplateBlob] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const messagesPerPage = 6;
@@ -87,10 +88,12 @@ const Guestbook = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isSubmitting) return; // prevent double submit
     if (!newMessage.firstName || !newMessage.lastName || !newMessage.content) {
       alert("Veuillez remplir tous les champs !");
       return;
     }
+    setIsSubmitting(true);
     try {
       const author = `${newMessage.firstName} ${newMessage.lastName}`;
       await guestbookService.submitWithPhotos(
@@ -99,13 +102,15 @@ const Guestbook = () => {
         rawBlob,
         templateBlob
       );
-      alert("Message envoyé !");
       loadMessages();
       setNewMessage({ firstName: "", lastName: "", content: "" });
       setRawBlob(null);
       setTemplateBlob(null);
+      alert("Message envoyé !");
     } catch (error) {
       alert("Erreur lors de l'envoi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -218,16 +223,17 @@ const Guestbook = () => {
                 <div className="mt-8 font-poppins">
                   <button
                     type="submit"
-                    className="w-full p-0 border-none bg-transparent"
+                    disabled={isSubmitting}
+                    className="w-full p-0 border-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <DynamicWaveButton
-                      className="w-full py-4 bg-[#071341] text-white font-medium uppercase tracking-[0.2em] text-sm hover:!bg-[#B8AB38] hover:!text-[#071341] transition-colors"
+                      className="w-full py-4 bg-[#071341] text-white font-medium uppercase tracking-[0.2em] text-sm hover:!bg-[#B8AB38] hover:!text-[#071341] transition-colors cursor-pointer"
                       baseBg="bg-[#071341]"
                       hoverBg="bg-[#B8AB38]"
                       baseText="text-white"
                       hoverText="text-[#071341]"
                     >
-                      Envoyer le message
+                      {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
                     </DynamicWaveButton>
                   </button>
                 </div>
