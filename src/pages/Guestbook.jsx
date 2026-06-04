@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { guestbookService } from "../api/guestbook.service";
 import { getImageUrl } from "../api/api";
-import { RefreshCw, Image as ImageIcon, X } from "lucide-react";
+import { RefreshCw, Image as ImageIcon, X, Download } from "lucide-react";
 import PhotoBoothCanvas from "../components/common/PhotoBoothCanvas";
 import { motion, AnimatePresence } from "framer-motion";
 import DynamicWaveButton from "../components/common/DynamicWaveButton";
+import { saveAs } from "file-saver";
 
 const Guestbook = () => {
   const [messages, setMessages] = useState([]);
@@ -111,6 +112,21 @@ const Guestbook = () => {
       alert("Erreur lors de l'envoi.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDownloadImage = async (event, message) => {
+    event.stopPropagation();
+    const url = getImageUrl(message.image);
+    if (!url) return;
+    const fileName = `souvenir-${(message.author || "mmi").replace(/[^a-zA-Z0-9]/g, "-")}.jpg`;
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      saveAs(blob, fileName);
+    } catch (error) {
+      // Cross-origin fetch blocked — open the image in a new tab as fallback
+      window.open(url, "_blank");
     }
   };
 
@@ -380,7 +396,7 @@ const Guestbook = () => {
               </button>
 
               {selectedMessage.image && (
-                <div className="md:w-1/2 bg-black h-64 md:h-auto relative flex items-center justify-center overflow-hidden">
+                <div className="md:w-1/2 bg-black h-64 md:h-auto relative flex items-center justify-center overflow-hidden group">
                   <img
                     src={getImageUrl(selectedMessage.image)}
                     alt="Souvenir"
@@ -389,6 +405,14 @@ const Guestbook = () => {
                     }}
                     className="w-full h-full object-contain"
                   />
+                  <button
+                    onClick={(event) => handleDownloadImage(event, selectedMessage)}
+                    className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-[#B8AB38] text-[#071341] px-4 py-2 text-sm font-medium uppercase tracking-widest hover:bg-white transition-colors cursor-pointer shadow-lg"
+                    title="Télécharger la photo"
+                  >
+                    <Download className="h-4 w-4" />
+                    Télécharger
+                  </button>
                 </div>
               )}
 

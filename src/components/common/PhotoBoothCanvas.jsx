@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Trash2 } from "lucide-react";
+import { Camera, Trash2, Maximize, Minimize } from "lucide-react";
 
 const GOLD = "#B8AB38";
 const NAVY_95 = "rgba(7,19,65,0.95)";
@@ -114,12 +114,21 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
   const streamRef = useRef(null);
   const [phase, setPhase] = useState("idle");
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const img = new Image();
     img.onload = () => { logoRef.current = img; };
     img.src = "/logouge.png";
   }, []);
+
+  // Exit fullscreen with the Escape key
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e) => { if (e.key === "Escape") setIsFullscreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -182,6 +191,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
     drawTemplate(tplCtx, outW, outH, logoRef.current);
 
     stopStream();
+    setIsFullscreen(false);
     setPreviewUrl(tplCanvas.toDataURL("image/jpeg", 0.92));
     setPhase("captured");
 
@@ -208,6 +218,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
 
   const handleCancel = () => {
     stopStream();
+    setIsFullscreen(false);
     setPhase("idle");
     setPreviewUrl(null);
     onCancel?.();
@@ -227,10 +238,24 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
       )}
 
       {phase === "live" && (
+       <div className={isFullscreen ? "fixed inset-0 z-200 bg-black flex items-center justify-center" : ""}>
         <div
           className="relative rounded-lg overflow-hidden bg-black mx-auto"
-          style={{ aspectRatio: "3/4", maxWidth: "320px" }}
+          style={isFullscreen
+            ? { aspectRatio: "3/4", height: "90vh", maxWidth: "95vw" }
+            : { aspectRatio: "3/4", maxWidth: "320px" }}
         >
+          {/* Fullscreen toggle */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen((v) => !v)}
+            aria-label={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+            className="absolute top-3 right-3 z-30 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-colors cursor-pointer"
+            style={{ minWidth: 40, minHeight: 40 }}
+          >
+            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+          </button>
+
           {/* CSS template overlay — visual preview only */}
           <div className="absolute inset-0 z-10 pointer-events-none">
             <div
@@ -292,6 +317,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             </button>
           </div>
         </div>
+       </div>
       )}
 
       {phase === "captured" && previewUrl && (
