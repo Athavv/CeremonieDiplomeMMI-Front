@@ -314,14 +314,17 @@ const Guestbook = () => {
                         <ImageIcon className="h-8 w-8 text-[#B8AB38]" />
                       </div>
                       {message.image && (
-                        <div className="h-16 w-16 rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg bg-black">
+                        <div
+                          className="w-36 max-w-[45%] rounded-lg overflow-hidden border border-[#B8AB38]/50 group-hover:border-[#B8AB38] shadow-lg bg-black shrink-0"
+                          style={{ aspectRatio: "3/4" }}
+                        >
                           <img
                             src={getImageUrl(message.image)}
                             alt="Souvenir"
                             onError={(event) => {
                               event.target.style.display = "none";
                             }}
-                            className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-125"
+                            className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
                           />
                         </div>
                       )}

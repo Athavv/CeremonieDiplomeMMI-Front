@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Camera, Trash2, Maximize, Minimize } from "lucide-react";
 
 const GOLD = "#B8AB38";
@@ -30,20 +31,20 @@ function drawTemplate(ctx, w, h, logoImg) {
   const s = w / 360; // base design width 360px for portrait
 
   // Top gradient
-  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.38);
+  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.30);
   topGrad.addColorStop(0, NAVY_95);
-  topGrad.addColorStop(0.6, NAVY_72);
+  topGrad.addColorStop(0.55, NAVY_72);
   topGrad.addColorStop(1, NAVY_0);
   ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, w, h * 0.38);
+  ctx.fillRect(0, 0, w, h * 0.30);
 
   // Bottom gradient
-  const botGrad = ctx.createLinearGradient(0, h, 0, h * 0.62);
+  const botGrad = ctx.createLinearGradient(0, h, 0, h * 0.70);
   botGrad.addColorStop(0, NAVY_95);
-  botGrad.addColorStop(0.6, NAVY_72);
+  botGrad.addColorStop(0.55, NAVY_72);
   botGrad.addColorStop(1, NAVY_0);
   ctx.fillStyle = botGrad;
-  ctx.fillRect(0, h * 0.62, w, h * 0.38);
+  ctx.fillRect(0, h * 0.70, w, h * 0.30);
 
   // Top text
   ctx.textAlign = "center";
@@ -144,12 +145,13 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
 
   useEffect(() => () => stopStream(), []);
 
-  // Wire stream to video AFTER the <video> element mounts (phase "live")
+  // Wire stream to video AFTER the <video> element mounts (phase "live").
+  // Re-runs when toggling the enlarged popup, since the <video> remounts then.
   useEffect(() => {
     if (phase === "live" && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
     }
-  }, [phase]);
+  }, [phase, isEnlarged]);
 
   const startCamera = async () => {
     try {
@@ -266,15 +268,13 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
         </button>
       )}
 
-      {phase === "live" && (
-       <div className={isEnlarged
-         ? "fixed inset-0 z-200 bg-[#071341]/90 backdrop-blur-md flex items-center justify-center p-4"
-         : ""}>
+      {phase === "live" && (() => {
+        const booth = (
         <div
           className="relative rounded-lg overflow-hidden bg-black mx-auto shadow-2xl"
           style={isEnlarged
             ? { aspectRatio: "3/4", height: "80vh", maxWidth: "95vw" }
-            : { aspectRatio: "3/4", maxWidth: "320px" }}
+            : { aspectRatio: "3/4", maxWidth: "400px" }}
         >
           {/* Enlarge / shrink toggle */}
           <button
@@ -291,7 +291,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
           <div className="absolute inset-0 z-10 pointer-events-none">
             <div
               className="absolute inset-x-0 top-0"
-              style={{ height: "38%", background: `linear-gradient(to bottom, ${NAVY_95}, ${NAVY_72} 60%, ${NAVY_0})` }}
+              style={{ height: "30%", background: `linear-gradient(to bottom, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})` }}
             >
               <div className="pt-3 text-center">
                 <p className="text-white/65 text-[9px] tracking-[3px] uppercase font-sans">IUT DE MEAUX</p>
@@ -301,7 +301,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             </div>
             <div
               className="absolute inset-x-0 bottom-0"
-              style={{ height: "38%", background: `linear-gradient(to top, ${NAVY_95}, ${NAVY_72} 60%, ${NAVY_0})` }}
+              style={{ height: "30%", background: `linear-gradient(to top, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})` }}
             >
               <div className="absolute bottom-3 inset-x-0 text-center">
                 <div className="w-8 h-px bg-[#B8AB38] mx-auto mb-1.5" />
@@ -377,11 +377,19 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             </button>
           </div>
         </div>
-       </div>
-      )}
+        );
+        return isEnlarged
+          ? createPortal(
+              <div className="fixed inset-0 z-200 bg-[#071341]/90 backdrop-blur-md flex items-center justify-center p-4">
+                {booth}
+              </div>,
+              document.body
+            )
+          : booth;
+      })()}
 
       {phase === "captured" && previewUrl && (
-        <div className="relative w-56 max-w-full mt-2 group" style={{ aspectRatio: "3/4" }}>
+        <div className="relative w-full mx-auto mt-2 group" style={{ aspectRatio: "3/4", maxWidth: "400px" }}>
           <img
             src={previewUrl}
             alt="Photo avec template"
