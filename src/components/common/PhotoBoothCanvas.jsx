@@ -59,11 +59,14 @@ function drawTemplate(ctx, w, h, logoImg) {
   if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
     const logoH = Math.round(16 * s);
     const logoW = Math.round(logoImg.width * (logoH / logoImg.height));
-    ctx.globalAlpha = 0.85;
-    ctx.filter = "brightness(0) invert(1)";
-    ctx.drawImage(logoImg, Math.round(12 * s), h - logoH - Math.round(14 * s), logoW, logoH);
-    ctx.globalAlpha = 1;
-    ctx.filter = "none";
+    try {
+      ctx.globalAlpha = 0.85;
+      ctx.filter = "brightness(0) invert(1)";
+      ctx.drawImage(logoImg, Math.round(12 * s), h - logoH - Math.round(14 * s), logoW, logoH);
+    } finally {
+      ctx.globalAlpha = 1;
+      ctx.filter = "none";
+    }
   }
 
   // Corner ornaments
@@ -100,13 +103,14 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
 
   useEffect(() => {
     const img = new Image();
+    img.onload = () => { logoRef.current = img; };
     img.src = "/logouge.png";
-    logoRef.current = img;
   }, []);
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
   };
 
   useEffect(() => () => stopStream(), []);
@@ -160,7 +164,12 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
     rawCanvas.toBlob(
       (rawBlob) => {
         tplCanvas.toBlob(
-          (tplBlob) => onCapture(rawBlob, tplBlob),
+          (tplBlob) => {
+            onCapture(rawBlob, tplBlob);
+            // Release canvas backing stores to free GPU/CPU memory
+            rawCanvas.width = 0;
+            tplCanvas.width = 0;
+          },
           "image/jpeg",
           0.92
         );
@@ -268,6 +277,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             <button
               type="button"
               onClick={capture}
+              aria-label="Prendre la photo"
               className="bg-white text-black p-3 rounded-full hover:scale-110 transition-transform shadow-lg"
               style={{ minWidth: 48, minHeight: 48 }}
             >
@@ -276,6 +286,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             <button
               type="button"
               onClick={handleCancel}
+              aria-label="Annuler"
               className="bg-red-500 text-white p-3 rounded-full hover:scale-110 transition-transform shadow-lg"
               style={{ minWidth: 48, minHeight: 48 }}
             >
