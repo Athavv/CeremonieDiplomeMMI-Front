@@ -43,7 +43,7 @@ const GalleryAdminPage = () => {
         
         try {
             const response = await api.post('/files/upload/gallery', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': undefined }
             });
             return response.data; // URL
         } catch (error) {

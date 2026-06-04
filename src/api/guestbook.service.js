@@ -25,7 +25,11 @@ const submitWithPhotos = async (author, content, rawBlob, templateBlob) => {
     formData.append("content", content);
     if (rawBlob)      formData.append("photoRaw",      rawBlob,      "photo-raw.jpg");
     if (templateBlob) formData.append("photoTemplate", templateBlob, "photo-template.jpg");
-    const response = await api.post("/public/guestbook/submit", formData);
+    // Content-Type undefined → browser sets multipart/form-data WITH boundary
+    // (the api instance default is application/json, which would break parsing)
+    const response = await api.post("/public/guestbook/submit", formData, {
+        headers: { "Content-Type": undefined },
+    });
     return response.data;
 };
 
