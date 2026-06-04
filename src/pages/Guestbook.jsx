@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { guestbookService } from "../api/guestbook.service";
-import api, { getImageUrl } from "../api/api";
-import { Camera, RefreshCw, Trash2, Image as ImageIcon, X } from "lucide-react";
+import { getImageUrl } from "../api/api";
+import { RefreshCw, Image as ImageIcon, X } from "lucide-react";
+import PhotoBoothCanvas from "../components/common/PhotoBoothCanvas";
 import { motion, AnimatePresence } from "framer-motion";
 import DynamicWaveButton from "../components/common/DynamicWaveButton";
 
@@ -12,10 +13,8 @@ const Guestbook = () => {
     lastName: "",
     content: "",
   });
-  const [capturedImage, setCapturedImage] = useState(null);
-  const [showCamera, setShowCamera] = useState(false);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const [rawBlob, setRawBlob] = useState(null);
+  const [templateBlob, setTemplateBlob] = useState(null);
   const [page, setPage] = useState(1);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const messagesPerPage = 6;
@@ -86,92 +85,25 @@ const Guestbook = () => {
     }
   };
 
-  const handleCamera = async () => {
-    setShowCamera(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      alert("Impossible d'accéder à la caméra.");
-      setShowCamera(false);
-    }
-  };
-
-  const takePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
-      const MAX_WIDTH = 320;
-      const scale = MAX_WIDTH / videoRef.current.videoWidth;
-      canvasRef.current.width = MAX_WIDTH;
-      canvasRef.current.height = videoRef.current.videoHeight * scale;
-      context.drawImage(
-        videoRef.current,
-        0,
-        0,
-        canvasRef.current.width,
-        canvasRef.current.height,
-      );
-      const dataUrl = canvasRef.current.toDataURL("image/jpeg", 0.4);
-      setCapturedImage(dataUrl);
-      stopCamera();
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-    }
-    setShowCamera(false);
-  };
-
-  const dataURItoBlob = (dataURI) => {
-    const byteString = atob(dataURI.split(",")[1]);
-    const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-    const arrayBuffer = new ArrayBuffer(byteString.length);
-    const uint8Array = new Uint8Array(arrayBuffer);
-    for (let i = 0; i < byteString.length; i++) {
-      uint8Array[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([arrayBuffer], { type: mimeString });
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!newMessage.firstName || !newMessage.lastName || !newMessage.content) {
       alert("Veuillez remplir tous les champs !");
       return;
     }
-
     try {
-      let uploadedImageId = null;
-
-      if (capturedImage) {
-        const blob = dataURItoBlob(capturedImage);
-        const formData = new FormData();
-        formData.append("file", blob, "guestbook-photo.jpg");
-        const uploadResponse = await api.post(
-          "/files/upload/gallery",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
-        );
-        uploadedImageId = uploadResponse.data;
-      }
-
-      const messageToSend = {
-        author: `${newMessage.firstName} ${newMessage.lastName}`,
-        content: newMessage.content,
-        image: uploadedImageId,
-      };
-
-      await guestbookService.postMessage(messageToSend);
+      const author = `${newMessage.firstName} ${newMessage.lastName}`;
+      await guestbookService.submitWithPhotos(
+        author,
+        newMessage.content,
+        rawBlob,
+        templateBlob
+      );
       alert("Message envoyé !");
       loadMessages();
       setNewMessage({ firstName: "", lastName: "", content: "" });
-      setCapturedImage(null);
+      setRawBlob(null);
+      setTemplateBlob(null);
     } catch (error) {
       alert("Erreur lors de l'envoi.");
     }
@@ -271,59 +203,16 @@ const Guestbook = () => {
                 </div>
 
                 <div className="pt-2">
-                  {!showCamera && !capturedImage && (
-                    <button
-                      type="button"
-                      onClick={handleCamera}
-                      className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#071341] transition-colors"
-                    >
-                      <Camera className="h-4 w-4" />
-                      Ajouter une photo souvenir
-                    </button>
-                  )}
-                  {showCamera && (
-                    <div className="relative bg-black rounded-lg overflow-hidden aspect-video mb-4">
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full h-full object-cover"
-                      ></video>
-                      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-                        <button
-                          type="button"
-                          onClick={takePhoto}
-                          className="bg-white text-black p-3 rounded-full hover:scale-110 transition-transform shadow-lg z-20"
-                        >
-                          <Camera className="h-6 w-6" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={stopCamera}
-                          className="bg-red-500 text-white p-3 rounded-full hover:scale-110 transition-transform shadow-lg z-20"
-                        >
-                          <Trash2 className="h-6 w-6" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {capturedImage && (
-                    <div className="relative w-32 h-32 mt-2 group">
-                      <img
-                        src={capturedImage}
-                        alt="Captured"
-                        className="w-full h-full object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCapturedImage(null)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                  <canvas ref={canvasRef} className="hidden"></canvas>
+                  <PhotoBoothCanvas
+                    onCapture={(raw, tpl) => {
+                      setRawBlob(raw);
+                      setTemplateBlob(tpl);
+                    }}
+                    onCancel={() => {
+                      setRawBlob(null);
+                      setTemplateBlob(null);
+                    }}
+                  />
                 </div>
 
                 <div className="mt-8 font-poppins">
