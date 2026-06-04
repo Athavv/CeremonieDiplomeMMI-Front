@@ -72,10 +72,6 @@ const Guestbook = () => {
     },
   });
 
-  useEffect(() => {
-    loadMessages();
-  }, []);
-
   const loadMessages = async () => {
     try {
       const data = await guestbookService.getAllMessages();
@@ -84,6 +80,10 @@ const Guestbook = () => {
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    loadMessages();
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

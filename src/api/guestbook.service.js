@@ -25,9 +25,7 @@ const submitWithPhotos = async (author, content, rawBlob, templateBlob) => {
     formData.append("content", content);
     if (rawBlob)      formData.append("photoRaw",      rawBlob,      "photo-raw.jpg");
     if (templateBlob) formData.append("photoTemplate", templateBlob, "photo-template.jpg");
-    const response = await api.post("/public/guestbook/submit", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.post("/public/guestbook/submit", formData);
     return response.data;
 };
 
