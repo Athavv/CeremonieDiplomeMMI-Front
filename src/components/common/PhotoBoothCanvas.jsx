@@ -31,20 +31,20 @@ function drawTemplate(ctx, w, h, logoImg) {
   const s = w / 360; // base design width 360px for portrait
 
   // Top gradient
-  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.30);
+  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.24);
   topGrad.addColorStop(0, NAVY_95);
   topGrad.addColorStop(0.55, NAVY_72);
   topGrad.addColorStop(1, NAVY_0);
   ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, w, h * 0.30);
+  ctx.fillRect(0, 0, w, h * 0.24);
 
   // Bottom gradient
-  const botGrad = ctx.createLinearGradient(0, h, 0, h * 0.70);
+  const botGrad = ctx.createLinearGradient(0, h, 0, h * 0.76);
   botGrad.addColorStop(0, NAVY_95);
   botGrad.addColorStop(0.55, NAVY_72);
   botGrad.addColorStop(1, NAVY_0);
   ctx.fillStyle = botGrad;
-  ctx.fillRect(0, h * 0.70, w, h * 0.30);
+  ctx.fillRect(0, h * 0.76, w, h * 0.24);
 
   // Top text
   ctx.textAlign = "center";
@@ -291,7 +291,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
           <div className="absolute inset-0 z-10 pointer-events-none">
             <div
               className="absolute inset-x-0 top-0"
-              style={{ height: "30%", background: `linear-gradient(to bottom, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})` }}
+              style={{ height: "24%", background: `linear-gradient(to bottom, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})` }}
             >
               <div className="pt-3 text-center">
                 <p className="text-white/65 text-[9px] tracking-[3px] uppercase font-sans">IUT DE MEAUX</p>
@@ -301,7 +301,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             </div>
             <div
               className="absolute inset-x-0 bottom-0"
-              style={{ height: "30%", background: `linear-gradient(to top, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})` }}
+              style={{ height: "24%", background: `linear-gradient(to top, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})` }}
             >
               <div className="absolute bottom-3 inset-x-0 text-center">
                 <div className="w-8 h-px bg-[#B8AB38] mx-auto mb-1.5" />

@@ -399,7 +399,7 @@ const Guestbook = () => {
               </button>
 
               {selectedMessage.image && (
-                <div className="md:w-1/2 bg-black h-64 md:h-auto relative flex items-center justify-center overflow-hidden group">
+                <div className="md:w-1/2 bg-black h-64 md:h-auto relative flex items-center justify-center overflow-hidden">
                   <img
                     src={getImageUrl(selectedMessage.image)}
                     alt="Souvenir"
@@ -408,14 +408,6 @@ const Guestbook = () => {
                     }}
                     className="w-full h-full object-contain"
                   />
-                  <button
-                    onClick={(event) => handleDownloadImage(event, selectedMessage)}
-                    className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-[#B8AB38] text-[#071341] px-4 py-2 text-sm font-medium uppercase tracking-widest hover:bg-white transition-colors cursor-pointer shadow-lg"
-                    title="Télécharger la photo"
-                  >
-                    <Download className="h-4 w-4" />
-                    Télécharger
-                  </button>
                 </div>
               )}
 
@@ -428,10 +420,20 @@ const Guestbook = () => {
                 <p className="font-light leading-relaxed italic text-xl md:text-3xl mb-8">
                   "{selectedMessage.content}"
                 </p>
-                <div className="pt-6 border-t border-[#B8AB38]/50 mt-auto">
+                <div className="pt-6 border-t border-[#B8AB38]/50 mt-auto flex items-center justify-between gap-4 flex-wrap">
                   <span className="text-[#B8AB38] font-serif uppercase tracking-widest text-lg md:text-xl">
                     — {selectedMessage.author}
                   </span>
+                  {selectedMessage.image && (
+                    <button
+                      onClick={(event) => handleDownloadImage(event, selectedMessage)}
+                      className="flex items-center gap-2 bg-[#B8AB38] text-[#071341] px-4 py-2 text-sm font-medium uppercase tracking-widest hover:bg-white transition-colors cursor-pointer shadow-lg"
+                      title="Télécharger la photo"
+                    >
+                      <Download className="h-4 w-4" />
+                      Télécharger
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
