@@ -10,7 +10,7 @@ const SplitText = ({ children, delayOffset = 0, className = "" }) => {
     
     const containerVariants = {
         hidden: { opacity: 0 },
-        visible: (i = 1) => ({ opacity: 1, transition: { staggerChildren: 0.1, delayChildren: delayOffset * 0.3 } })
+        visible: () => ({ opacity: 1, transition: { staggerChildren: 0.1, delayChildren: delayOffset * 0.3 } })
     };
 
     const childVariants = {
