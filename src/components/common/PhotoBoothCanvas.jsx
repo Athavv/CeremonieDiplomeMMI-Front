@@ -114,7 +114,10 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
   const streamRef = useRef(null);
   const [phase, setPhase] = useState("idle");
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEnlarged, setIsEnlarged] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0); // 0 = no timer, 3, or 10
+  const [countdown, setCountdown] = useState(null);     // null or remaining seconds
+  const countdownRef = useRef(null);
 
   useEffect(() => {
     const img = new Image();
@@ -122,13 +125,16 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
     img.src = "/logouge.png";
   }, []);
 
-  // Exit fullscreen with the Escape key
+  // Close the enlarged popup with the Escape key
   useEffect(() => {
-    if (!isFullscreen) return;
-    const onKey = (e) => { if (e.key === "Escape") setIsFullscreen(false); };
+    if (!isEnlarged) return;
+    const onKey = (e) => { if (e.key === "Escape") setIsEnlarged(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isFullscreen]);
+  }, [isEnlarged]);
+
+  // Clear any running countdown on unmount
+  useEffect(() => () => clearInterval(countdownRef.current), []);
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -191,7 +197,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
     drawTemplate(tplCtx, outW, outH, logoRef.current);
 
     stopStream();
-    setIsFullscreen(false);
+    setIsEnlarged(false);
     setPreviewUrl(tplCanvas.toDataURL("image/jpeg", 0.92));
     setPhase("captured");
 
@@ -210,6 +216,27 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
     );
   };
 
+  // Capture button → start countdown if a timer is set, else capture now
+  const handleShutter = () => {
+    if (countdown !== null) return; // already counting
+    if (timerSeconds <= 0) {
+      capture();
+      return;
+    }
+    let n = timerSeconds;
+    setCountdown(n);
+    countdownRef.current = setInterval(() => {
+      n -= 1;
+      if (n <= 0) {
+        clearInterval(countdownRef.current);
+        setCountdown(null);
+        capture();
+      } else {
+        setCountdown(n);
+      }
+    }, 1000);
+  };
+
   const retake = () => {
     setPreviewUrl(null);
     setPhase("idle");
@@ -217,8 +244,10 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
   };
 
   const handleCancel = () => {
+    clearInterval(countdownRef.current);
+    setCountdown(null);
     stopStream();
-    setIsFullscreen(false);
+    setIsEnlarged(false);
     setPhase("idle");
     setPreviewUrl(null);
     onCancel?.();
@@ -238,22 +267,24 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
       )}
 
       {phase === "live" && (
-       <div className={isFullscreen ? "fixed inset-0 z-200 bg-black flex items-center justify-center" : ""}>
+       <div className={isEnlarged
+         ? "fixed inset-0 z-200 bg-[#071341]/90 backdrop-blur-md flex items-center justify-center p-4"
+         : ""}>
         <div
-          className="relative rounded-lg overflow-hidden bg-black mx-auto"
-          style={isFullscreen
-            ? { aspectRatio: "3/4", height: "90vh", maxWidth: "95vw" }
+          className="relative rounded-lg overflow-hidden bg-black mx-auto shadow-2xl"
+          style={isEnlarged
+            ? { aspectRatio: "3/4", height: "80vh", maxWidth: "95vw" }
             : { aspectRatio: "3/4", maxWidth: "320px" }}
         >
-          {/* Fullscreen toggle */}
+          {/* Enlarge / shrink toggle */}
           <button
             type="button"
-            onClick={() => setIsFullscreen((v) => !v)}
-            aria-label={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+            onClick={() => setIsEnlarged((v) => !v)}
+            aria-label={isEnlarged ? "Réduire" : "Agrandir"}
             className="absolute top-3 right-3 z-30 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-colors cursor-pointer"
             style={{ minWidth: 40, minHeight: 40 }}
           >
-            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+            {isEnlarged ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
           </button>
 
           {/* CSS template overlay — visual preview only */}
@@ -296,12 +327,41 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
             style={{ transform: "scaleX(-1)" }}
           />
 
+          {/* Countdown overlay */}
+          {countdown !== null && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/30 pointer-events-none">
+              <span className="text-white font-serif drop-shadow-lg" style={{ fontSize: "min(40vh, 160px)", lineHeight: 1 }}>
+                {countdown}
+              </span>
+            </div>
+          )}
+
+          {/* Timer selector */}
+          <div className="absolute top-3 left-3 z-30 flex gap-1.5">
+            {[{ v: 0, label: "0s" }, { v: 3, label: "3s" }, { v: 10, label: "10s" }].map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setTimerSeconds(opt.v)}
+                disabled={countdown !== null}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                  timerSeconds === opt.v
+                    ? "bg-[#B8AB38] text-[#071341]"
+                    : "bg-black/50 text-white hover:bg-black/80"
+                }`}
+              >
+                {opt.v === 0 ? "Sans" : opt.label}
+              </button>
+            ))}
+          </div>
+
           <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20">
             <button
               type="button"
-              onClick={capture}
+              onClick={handleShutter}
+              disabled={countdown !== null}
               aria-label="Prendre la photo"
-              className="bg-white text-black p-3 rounded-full hover:scale-110 transition-transform shadow-lg"
+              className="bg-white text-black p-3 rounded-full hover:scale-110 transition-transform shadow-lg disabled:opacity-50 cursor-pointer"
               style={{ minWidth: 48, minHeight: 48 }}
             >
               <Camera className="h-6 w-6" />
@@ -310,7 +370,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
               type="button"
               onClick={handleCancel}
               aria-label="Annuler"
-              className="bg-red-500 text-white p-3 rounded-full hover:scale-110 transition-transform shadow-lg"
+              className="bg-red-500 text-white p-3 rounded-full hover:scale-110 transition-transform shadow-lg cursor-pointer"
               style={{ minWidth: 48, minHeight: 48 }}
             >
               <Trash2 className="h-6 w-6" />
@@ -321,18 +381,19 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
       )}
 
       {phase === "captured" && previewUrl && (
-        <div className="relative w-24 mt-2 group" style={{ aspectRatio: "3/4" }}>
+        <div className="relative w-56 max-w-full mt-2 group" style={{ aspectRatio: "3/4" }}>
           <img
             src={previewUrl}
             alt="Photo avec template"
-            className="w-full h-full object-cover rounded-lg border border-gray-200"
+            className="w-full h-full object-cover rounded-lg border border-gray-200 shadow-md"
           />
           <button
             type="button"
             onClick={retake}
-            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Reprendre la photo"
+            className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-colors cursor-pointer"
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       )}
