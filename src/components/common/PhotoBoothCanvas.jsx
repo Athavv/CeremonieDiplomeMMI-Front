@@ -5,55 +5,72 @@ const GOLD = "#B8AB38";
 const NAVY_95 = "rgba(7,19,65,0.95)";
 const NAVY_72 = "rgba(7,19,65,0.72)";
 const NAVY_0 = "rgba(7,19,65,0)";
+const PORTRAIT_RATIO = 3 / 4;
+
+function cropToPortrait(videoW, videoH) {
+  const videoRatio = videoW / videoH;
+  let sx, sy, sw, sh;
+  if (videoRatio > PORTRAIT_RATIO) {
+    // Landscape camera — crop sides to get portrait center
+    sh = videoH;
+    sw = videoH * PORTRAIT_RATIO;
+    sx = (videoW - sw) / 2;
+    sy = 0;
+  } else {
+    // Already portrait or square — crop top/bottom
+    sw = videoW;
+    sh = videoW / PORTRAIT_RATIO;
+    sx = 0;
+    sy = (videoH - sh) / 2;
+  }
+  return { sx, sy, sw, sh, outW: Math.round(sw), outH: Math.round(sh) };
+}
 
 function drawTemplate(ctx, w, h, logoImg) {
+  const s = w / 360; // base design width 360px for portrait
+
   // Top gradient
-  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.42);
+  const topGrad = ctx.createLinearGradient(0, 0, 0, h * 0.38);
   topGrad.addColorStop(0, NAVY_95);
-  topGrad.addColorStop(0.55, NAVY_72);
+  topGrad.addColorStop(0.6, NAVY_72);
   topGrad.addColorStop(1, NAVY_0);
   ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, w, h * 0.42);
+  ctx.fillRect(0, 0, w, h * 0.38);
 
   // Bottom gradient
-  const botGrad = ctx.createLinearGradient(0, h, 0, h * 0.58);
+  const botGrad = ctx.createLinearGradient(0, h, 0, h * 0.62);
   botGrad.addColorStop(0, NAVY_95);
-  botGrad.addColorStop(0.55, NAVY_72);
+  botGrad.addColorStop(0.6, NAVY_72);
   botGrad.addColorStop(1, NAVY_0);
   ctx.fillStyle = botGrad;
-  ctx.fillRect(0, h * 0.58, w, h * 0.42);
-
-  const s = w / 480; // scale factor based on 480px design width
+  ctx.fillRect(0, h * 0.62, w, h * 0.38);
 
   // Top text
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.font = `${Math.round(9 * s)}px Arial, sans-serif`;
-  ctx.fillText("IUT DE MEAUX", w / 2, Math.round(22 * s));
+  ctx.fillText("IUT DE MEAUX", w / 2, Math.round(24 * s));
 
   ctx.fillStyle = "white";
-  ctx.font = `italic ${Math.round(13 * s)}px Georgia, serif`;
-  ctx.fillText("Cérémonie MMI", w / 2, Math.round(40 * s));
+  ctx.font = `italic ${Math.round(14 * s)}px Georgia, serif`;
+  ctx.fillText("Cérémonie MMI", w / 2, Math.round(44 * s));
 
-  // Top separator
-  const sepW = Math.round(30 * s);
+  const sepW = Math.round(32 * s);
   ctx.fillStyle = GOLD;
-  ctx.fillRect(w / 2 - sepW / 2, Math.round(47 * s), sepW, Math.max(1, Math.round(1 * s)));
+  ctx.fillRect(w / 2 - sepW / 2, Math.round(52 * s), sepW, Math.max(1, Math.round(1 * s)));
 
   // Bottom text
-  const botBase = h - Math.round(42 * s);
-
-  // Bottom separator
+  const botBase = h - Math.round(44 * s);
   ctx.fillStyle = GOLD;
   ctx.fillRect(w / 2 - sepW / 2, botBase, sepW, Math.max(1, Math.round(1 * s)));
 
   ctx.fillStyle = GOLD;
-  ctx.font = `italic ${Math.round(13 * s)}px Georgia, serif`;
-  ctx.fillText("Promotion 2022 / 2025", w / 2, botBase + Math.round(18 * s));
+  ctx.font = `italic ${Math.round(14 * s)}px Georgia, serif`;
+  ctx.fillText("Promotion 2022 / 2025", w / 2, botBase + Math.round(20 * s));
 
   ctx.fillStyle = "rgba(255,255,255,0.5)";
   ctx.font = `${Math.round(8 * s)}px Arial, sans-serif`;
-  ctx.fillText("MÉTIERS DU MULTIMÉDIA & DE L'INTERNET", w / 2, botBase + Math.round(32 * s));
+  ctx.fillText("MÉTIERS DU MULTIMÉDIA & DE L'INTERNET", w / 2, botBase + Math.round(34 * s));
 
   // Logo bottom-left
   if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
@@ -72,23 +89,20 @@ function drawTemplate(ctx, w, h, logoImg) {
   // Corner ornaments
   const ornSize = Math.round(22 * s);
   const ornOff = Math.round(8 * s);
-  const ornTopY = Math.round(54 * s);
-  const ornBotY = h - Math.round(54 * s);
+  const ornTopY = Math.round(58 * s);
+  const ornBotY = h - Math.round(58 * s);
   ctx.strokeStyle = GOLD;
   ctx.lineWidth = Math.max(1, 1.5 * s);
 
   ctx.beginPath();
   ctx.moveTo(ornOff, ornTopY + ornSize); ctx.lineTo(ornOff, ornTopY); ctx.lineTo(ornOff + ornSize, ornTopY);
   ctx.stroke();
-
   ctx.beginPath();
   ctx.moveTo(w - ornOff - ornSize, ornTopY); ctx.lineTo(w - ornOff, ornTopY); ctx.lineTo(w - ornOff, ornTopY + ornSize);
   ctx.stroke();
-
   ctx.beginPath();
   ctx.moveTo(ornOff, ornBotY - ornSize); ctx.lineTo(ornOff, ornBotY); ctx.lineTo(ornOff + ornSize, ornBotY);
   ctx.stroke();
-
   ctx.beginPath();
   ctx.moveTo(w - ornOff - ornSize, ornBotY); ctx.lineTo(w - ornOff, ornBotY); ctx.lineTo(w - ornOff, ornBotY - ornSize);
   ctx.stroke();
@@ -98,7 +112,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
   const videoRef = useRef(null);
   const logoRef = useRef(null);
   const streamRef = useRef(null);
-  const [phase, setPhase] = useState("idle"); // idle | live | captured
+  const [phase, setPhase] = useState("idle");
   const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
@@ -115,16 +129,24 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
 
   useEffect(() => () => stopStream(), []);
 
+  // Wire stream to video AFTER the <video> element mounts (phase "live")
+  useEffect(() => {
+    if (phase === "live" && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [phase]);
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
+        video: {
+          facingMode: "user",
+          width: { ideal: 720 },
+          height: { ideal: 1280 },
+        },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setPhase("live");
+      setPhase("live"); // mounts <video>, then useEffect above wires the stream
     } catch {
       alert("Impossible d'accéder à la caméra.");
     }
@@ -134,28 +156,30 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
 
-    const W = video.videoWidth;
-    const H = video.videoHeight;
+    const { sx, sy, sw, sh, outW, outH } = cropToPortrait(video.videoWidth, video.videoHeight);
 
-    // Raw photo (mirrored — matches what user saw live)
+    // Raw photo — mirrored + cropped to portrait
     const rawCanvas = document.createElement("canvas");
-    rawCanvas.width = W;
-    rawCanvas.height = H;
+    rawCanvas.width = outW;
+    rawCanvas.height = outH;
     const rawCtx = rawCanvas.getContext("2d");
-    rawCtx.translate(W, 0);
+    rawCtx.save();
+    rawCtx.translate(outW, 0);
     rawCtx.scale(-1, 1);
-    rawCtx.drawImage(video, 0, 0, W, H);
+    rawCtx.drawImage(video, sx, sy, sw, sh, 0, 0, outW, outH);
+    rawCtx.restore();
 
-    // Photo with template
+    // Photo with template — same crop + overlay
     const tplCanvas = document.createElement("canvas");
-    tplCanvas.width = W;
-    tplCanvas.height = H;
+    tplCanvas.width = outW;
+    tplCanvas.height = outH;
     const tplCtx = tplCanvas.getContext("2d");
-    tplCtx.translate(W, 0);
+    tplCtx.save();
+    tplCtx.translate(outW, 0);
     tplCtx.scale(-1, 1);
-    tplCtx.drawImage(video, 0, 0, W, H);
-    tplCtx.setTransform(1, 0, 0, 1, 0, 0); // reset before drawing overlay
-    drawTemplate(tplCtx, W, H, logoRef.current);
+    tplCtx.drawImage(video, sx, sy, sw, sh, 0, 0, outW, outH);
+    tplCtx.restore();
+    drawTemplate(tplCtx, outW, outH, logoRef.current);
 
     stopStream();
     setPreviewUrl(tplCanvas.toDataURL("image/jpeg", 0.92));
@@ -166,16 +190,13 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
         tplCanvas.toBlob(
           (tplBlob) => {
             onCapture(rawBlob, tplBlob);
-            // Release canvas backing stores to free GPU/CPU memory
             rawCanvas.width = 0;
             tplCanvas.width = 0;
           },
-          "image/jpeg",
-          0.92
+          "image/jpeg", 0.92
         );
       },
-      "image/jpeg",
-      0.92
+      "image/jpeg", 0.92
     );
   };
 
@@ -207,61 +228,38 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
 
       {phase === "live" && (
         <div
-          className="relative rounded-lg overflow-hidden bg-black"
-          style={{ aspectRatio: "4/3" }}
+          className="relative rounded-lg overflow-hidden bg-black mx-auto"
+          style={{ aspectRatio: "3/4", maxWidth: "320px" }}
         >
-          {/* CSS template overlay — visual preview only, not used for canvas composition */}
+          {/* CSS template overlay — visual preview only */}
           <div className="absolute inset-0 z-10 pointer-events-none">
-            {/* Top gradient */}
             <div
               className="absolute inset-x-0 top-0"
-              style={{
-                height: "42%",
-                background: `linear-gradient(to bottom, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})`,
-              }}
+              style={{ height: "38%", background: `linear-gradient(to bottom, ${NAVY_95}, ${NAVY_72} 60%, ${NAVY_0})` }}
             >
               <div className="pt-3 text-center">
-                <p className="text-white/65 text-[9px] tracking-[3px] uppercase font-sans">
-                  IUT DE MEAUX
-                </p>
-                <p className="text-white italic text-sm font-serif mt-1">
-                  Cérémonie MMI
-                </p>
+                <p className="text-white/65 text-[9px] tracking-[3px] uppercase font-sans">IUT DE MEAUX</p>
+                <p className="text-white italic text-sm font-serif mt-1">Cérémonie MMI</p>
                 <div className="w-8 h-px bg-[#B8AB38] mx-auto mt-1.5" />
               </div>
             </div>
-
-            {/* Bottom gradient */}
             <div
               className="absolute inset-x-0 bottom-0"
-              style={{
-                height: "42%",
-                background: `linear-gradient(to top, ${NAVY_95}, ${NAVY_72} 55%, ${NAVY_0})`,
-              }}
+              style={{ height: "38%", background: `linear-gradient(to top, ${NAVY_95}, ${NAVY_72} 60%, ${NAVY_0})` }}
             >
               <div className="absolute bottom-3 inset-x-0 text-center">
                 <div className="w-8 h-px bg-[#B8AB38] mx-auto mb-1.5" />
-                <p className="text-[#B8AB38] italic text-sm font-serif">
-                  Promotion 2022 / 2025
-                </p>
+                <p className="text-[#B8AB38] italic text-sm font-serif">Promotion 2022 / 2025</p>
                 <p className="text-white/50 text-[8px] tracking-[2px] uppercase font-sans mt-1">
                   Métiers du Multimédia & de l&apos;Internet
                 </p>
               </div>
             </div>
-
-            {/* Logo bottom-left */}
-            <img
-              src="/logouge.png"
-              alt="UGE"
-              className="absolute bottom-3 left-3 h-4 brightness-0 invert opacity-85"
-            />
-
-            {/* Corner ornaments */}
-            <div className="absolute top-[54px] left-2 w-5 h-5 border-t border-l border-[#B8AB38]" />
-            <div className="absolute top-[54px] right-2 w-5 h-5 border-t border-r border-[#B8AB38]" />
-            <div className="absolute bottom-[54px] left-2 w-5 h-5 border-b border-l border-[#B8AB38]" />
-            <div className="absolute bottom-[54px] right-2 w-5 h-5 border-b border-r border-[#B8AB38]" />
+            <img src="/logouge.png" alt="UGE" className="absolute bottom-3 left-3 h-4 brightness-0 invert opacity-85" />
+            <div className="absolute top-14.5 left-2 w-5 h-5 border-t border-l border-[#B8AB38]" />
+            <div className="absolute top-14.5 right-2 w-5 h-5 border-t border-r border-[#B8AB38]" />
+            <div className="absolute bottom-14.5 left-2 w-5 h-5 border-b border-l border-[#B8AB38]" />
+            <div className="absolute bottom-14.5 right-2 w-5 h-5 border-b border-r border-[#B8AB38]" />
           </div>
 
           <video
@@ -297,7 +295,7 @@ const PhotoBoothCanvas = ({ onCapture, onCancel }) => {
       )}
 
       {phase === "captured" && previewUrl && (
-        <div className="relative w-32 h-32 mt-2 group">
+        <div className="relative w-24 mt-2 group" style={{ aspectRatio: "3/4" }}>
           <img
             src={previewUrl}
             alt="Photo avec template"
