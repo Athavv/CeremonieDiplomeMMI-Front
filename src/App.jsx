@@ -1,28 +1,33 @@
-import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import ChangePassword from './pages/ChangePassword';
-import Planning from './pages/Planning';
-import Gallery from './pages/Gallery';
-import Guestbook from './pages/Guestbook';
-import NotFound from './pages/NotFound';
+import { useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import ChangePassword from "./pages/ChangePassword";
+import Planning from "./pages/Planning";
+import Gallery from "./pages/Gallery";
+import Guestbook from "./pages/Guestbook";
+import NotFound from "./pages/NotFound";
 
-// Admin Imports
-import AdminLayout from './components/admin/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import UsersPage from './pages/admin/UsersPage';
-import GuestbookAdminPage from './pages/admin/GuestbookAdminPage';
-import GalleryAdminPage from './pages/admin/GalleryAdminPage';
-import Footer from './components/common/layout/Footer';
-import Preloader from './components/common/Preloader';
-import PageTransition from './components/common/PageTransition';
-import SmoothScroll from './components/common/SmoothScroll';
-import CustomCursor from './components/common/CustomCursor';
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UsersPage from "./pages/admin/UsersPage";
+import GuestbookAdminPage from "./pages/admin/GuestbookAdminPage";
+import GalleryAdminPage from "./pages/admin/GalleryAdminPage";
+import Footer from "./components/common/layout/Footer";
+import Preloader from "./components/common/Preloader";
+import PageTransition from "./components/common/PageTransition";
+import SmoothScroll from "./components/common/SmoothScroll";
+import CustomCursor from "./components/common/CustomCursor";
 
-import './index.css';
+import "./index.css";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -42,20 +47,25 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/change-password" />;
   }
 
-  if (adminOnly && user.role !== 'ADMIN') {
+  if (adminOnly && user.role !== "ADMIN") {
     return <Navigate to="/" />;
   }
 
   return children;
 };
 
-const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace('/api', '');
+const BACKEND_URL = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api"
+).replace("/api", "");
 
 function KeepAlive() {
   useEffect(() => {
-    const ping = () => fetch(`${BACKEND_URL}/api/public/guestbook`, { method: 'GET' }).catch(() => {});
+    const ping = () =>
+      fetch(`${BACKEND_URL}/api/public/guestbook`, { method: "GET" }).catch(
+        () => {},
+      );
     ping();
-    const id = setInterval(ping, 10 * 60 * 1000); // toutes les 10 minutes
+    const id = setInterval(ping, 10 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
   return null;
@@ -70,7 +80,6 @@ function App() {
         <SmoothScroll>
           <CustomCursor />
           <Preloader />
-          {/* Navbar is global */}
           <Navbar />
           <PageTransition>
             <Routes>
@@ -103,7 +112,6 @@ function App() {
                 <Route path="gallery" element={<GalleryAdminPage />} />
               </Route>
 
-              {/* 404 - Must be last */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PageTransition>

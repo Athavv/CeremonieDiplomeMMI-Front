@@ -43,14 +43,12 @@ const ChangePassword = () => {
         transition={{ duration: 0.6, type: 'spring', stiffness: 80 }}
         className="w-full max-w-md"
       >
-        {/* Logo / icône */}
         <div className="flex justify-center mb-8">
           <div className="w-16 h-16 rounded-full bg-[#B8AB38]/10 border border-[#B8AB38]/30 flex items-center justify-center">
             <KeyRound className="w-7 h-7 text-[#B8AB38]" />
           </div>
         </div>
 
-        {/* Titre */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-serif text-white uppercase tracking-widest mb-3">
             Bienvenue
@@ -61,7 +59,6 @@ const ChangePassword = () => {
           </p>
         </div>
 
-        {/* Carte formulaire */}
         <div className="bg-white/5 border border-white/10 backdrop-blur-sm p-8 relative">
           <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#B8AB38] to-transparent" />
 
@@ -76,7 +73,6 @@ const ChangePassword = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Nouveau mot de passe */}
             <div>
               <label className="block text-xs uppercase tracking-widest text-[#B8AB38] mb-2">
                 Nouveau mot de passe
@@ -100,7 +96,6 @@ const ChangePassword = () => {
               </div>
             </div>
 
-            {/* Confirmer */}
             <div>
               <label className="block text-xs uppercase tracking-widest text-[#B8AB38] mb-2">
                 Confirmer le mot de passe
@@ -124,7 +119,6 @@ const ChangePassword = () => {
               </div>
             </div>
 
-            {/* Bouton */}
             <button
               type="submit"
               disabled={loading}

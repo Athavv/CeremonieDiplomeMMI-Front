@@ -1,5 +1,5 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import { authService } from '../api/auth.service';
+import { createContext, useState, useContext, useEffect } from "react";
+import { authService } from "../api/auth.service";
 
 const AuthContext = createContext(null);
 
@@ -8,9 +8,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const firstLogin = localStorage.getItem('firstLogin') === 'true';
-    const role = localStorage.getItem('role');
+    const token = localStorage.getItem("token");
+    const firstLogin = localStorage.getItem("firstLogin") === "true";
+    const role = localStorage.getItem("role");
     if (token) {
       setUser({ token, firstLogin, role });
     }
@@ -21,48 +21,54 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await authService.login(email, password);
       const { token, firstLogin, role } = data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('firstLogin', firstLogin);
-      localStorage.setItem('role', role);
+      localStorage.setItem("token", token);
+      localStorage.setItem("firstLogin", firstLogin);
+      localStorage.setItem("role", role);
       setUser({ token, firstLogin, role });
       return { success: true, firstLogin };
     } catch (error) {
-      console.error('Login failed', error);
-      const message = error.response?.data?.message || error.message || 'Identifiants invalides';
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Identifiants invalides";
       return { success: false, message };
     }
   };
 
   const register = async (email, password, role) => {
     try {
-        await authService.register(email, password, role);
-        return { success: true };
+      await authService.register(email, password, role);
+      return { success: true };
     } catch (error) {
-        return { success: false };
+      return { success: false };
     }
-  }
+  };
 
   const changePassword = async (newPassword) => {
     try {
       await authService.changePassword(newPassword);
-      localStorage.setItem('firstLogin', 'false');
-      setUser(prev => ({ ...prev, firstLogin: false }));
+      localStorage.setItem("firstLogin", "false");
+      setUser((prev) => ({ ...prev, firstLogin: false }));
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Erreur lors du changement de mot de passe';
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors du changement de mot de passe";
       return { success: false, message };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('firstLogin');
-    localStorage.removeItem('role');
+    localStorage.removeItem("token");
+    localStorage.removeItem("firstLogin");
+    localStorage.removeItem("role");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, changePassword, loading, register }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, changePassword, loading, register }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -5,10 +5,9 @@ const SmoothScroll = ({ children }) => {
   const lenisRef = useRef(null);
 
   useEffect(() => {
-    // Initialize Lenis
     const lenis = new Lenis({
       duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://easings.net
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       direction: 'vertical',
       gestureDirection: 'vertical',
       smooth: true,
@@ -19,13 +18,13 @@ const SmoothScroll = ({ children }) => {
     });
     lenisRef.current = lenis;
 
-    const requestAnimationFrameId = requestAnimationFrame(function raf(time) {
+    const animationFrameId = requestAnimationFrame(function animationFrameCallback(time) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      requestAnimationFrame(animationFrameCallback);
     });
 
     return () => {
-      cancelAnimationFrame(requestAnimationFrameId);
+      cancelAnimationFrame(animationFrameId);
       lenis.destroy();
     };
   }, []);

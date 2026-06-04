@@ -5,12 +5,11 @@ const MagneticButton = ({ children, className, onClick, cursorText }) => {
   const ref = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
-  const handleMouse = (e) => {
-    const { clientX, clientY } = e;
+  const handleMouse = (event) => {
+    const { clientX, clientY } = event;
     const { height, width, left, top } = ref.current.getBoundingClientRect();
     const middleX = clientX - (left + width / 2);
     const middleY = clientY - (top + height / 2);
-    // Move the button slightly towards the cursor (strength is divisor)
     setPosition({ x: middleX * 0.2, y: middleY * 0.2 });
   };
 

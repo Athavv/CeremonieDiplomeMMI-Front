@@ -110,7 +110,6 @@ const AdminDashboard = () => {
                             Contacter le support
                         </button>
                     </div>
-                    {/* Decorative circle */}
                     <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#B8AB38] rounded-full opacity-10 blur-3xl"></div>
                 </div>
             </div>
