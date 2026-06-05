@@ -23,8 +23,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
-
+    // A rejected token is stale/expired — drop it so it stops being sent
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
     }
     return Promise.reject(error);
   }
