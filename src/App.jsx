@@ -88,14 +88,7 @@ function App() {
               <Route path="/planning" element={<Planning />} />
               <Route path="/change-password" element={<ChangePassword />} />
               <Route path="/guestbook" element={<Guestbook />} />
-              <Route
-                path="/gallery"
-                element={
-                  <ProtectedRoute>
-                    <Gallery />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/gallery" element={<Gallery />} />
 
               {/* Admin Routes */}
               <Route
