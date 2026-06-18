@@ -1,16 +1,25 @@
 import api from "./api";
 
 const getAllImages = async () => {
-    // Read images directly from the Drive "Galerie" folder (includes ones
-    // added manually). Falls back to the DB list if Drive is unavailable.
+    // Logged-in users see the full "Galerie" folder (/drive-all);
+    // anonymous visitors see only the curated "accesslibre" folder (/drive).
+    const loggedIn = !!localStorage.getItem('token');
+    const primary = loggedIn ? '/gallery/drive-all' : '/gallery/drive';
     try {
-        const response = await api.get('/gallery/drive');
+        const response = await api.get(primary);
         if (Array.isArray(response.data) && response.data.length > 0) {
             return response.data;
         }
     } catch (error) {
-        // fall through to DB
+        // If the authenticated listing failed (e.g. stale token), try the public one
+        if (loggedIn) {
+            try {
+                const pub = await api.get('/gallery/drive');
+                if (Array.isArray(pub.data) && pub.data.length > 0) return pub.data;
+            } catch (e) { /* fall through */ }
+        }
     }
+    // Final fallback: DB list
     const response = await api.get('/gallery');
     return response.data;
 };
